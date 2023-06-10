@@ -7,7 +7,7 @@ interface SigninModalStore{
     onClose:()=>void;
 }
 
-export const useSigninModal=create<SigninModalStore>((set)=>({
+const useSigninModal=create<SigninModalStore>((set)=>({
     isOpen:false,
     onOpen:()=>set({isOpen:true}),
     onClose:()=>set({isOpen:false})

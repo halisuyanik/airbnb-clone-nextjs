@@ -6,11 +6,15 @@ import { useMemo, useState } from "react";
 import Heading from "../Heading";
 import { categories } from "@/mocks/categories";
 import CategoryInput from "../inputs/CategoryInput";
-import { FieldValues, useForm } from "react-hook-form";
+import { Field, FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import CountrySelect from "../CountrySelect";
 import ImageUpload from "../inputs/ImageUpload";
 import dynamic from "next/dynamic";
 import Counter from "../inputs/Counter";
+import Input from "../inputs/Input";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 enum STEPS {
   CATEGORY = 0,
@@ -24,6 +28,26 @@ enum STEPS {
 const RentModal = () => {
   const rentModal = useRentModal();
   const [step, setStep] = useState(STEPS.CATEGORY);
+  const [isLoading, setIsLoading]=useState(false);
+  const router=useRouter();
+
+  const onSubmit:SubmitHandler<FieldValues>=(data)=>{
+    if(step!==STEPS.PRICE){
+      return goNext();
+    }
+    setIsLoading(true);
+    axios.post('/api/listings', data).then(()=>{
+      toast.success('Listing Created!');
+      router.refresh();
+      reset();
+      setStep(STEPS.CATEGORY);
+      rentModal.onClose();
+    }).catch(()=>{
+      toast.error('Something went wrong.');
+    }).finally(()=>{
+      setIsLoading(false);
+    })
+  }
 
   const goBack = () => {
     setStep((step) => step - 1);
@@ -126,9 +150,29 @@ const RentModal = () => {
     )
   }
 
+  if(step===STEPS.DESCRIPTION){
+    bodyContent=(
+      <div className="flex flex-col gap-8">
+        <Heading title="How would you describe your place?" subtitle="Short and swent works best!"></Heading>
+        <Input id="title" label="Title" disabled={isLoading} register={register} errors={errors} required></Input>
+        <hr></hr>
+        <Input id="description" label="Description" disabled={isLoading} register={register} errors={errors} required></Input>
+      </div>
+    )
+  }
+
+  if(step===STEPS.PRICE){
+    bodyContent=(
+      <div className="flex flex-col gap-8">
+        <Heading title="Now, set your price" subtitle="How much do you charge per night?"></Heading>
+        <Input id="price" label="Price" formatPrice type="number" disabled={isLoading} register={register} errors={errors} required></Input>
+      </div>
+    )
+  }
+
   return (
     <Modal
-      onSubmit={goNext}
+      onSubmit={handleSubmit(onSubmit)}
       body={bodyContent}
       title="Airbnb on your home!"
       actionLabel={actionLabel}
